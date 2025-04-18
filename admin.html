@@ -1,0 +1,102 @@
+<!-- admin.html -->
+
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Panel del Local</title>
+
+</head>
+
+<body>
+
+  <h2>Pedidos Recibidos</h2>
+
+  <div id="pedidos"></div>
+
+
+
+  <!-- Firebase SDK -->
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+
+
+  <script>
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPIFtOd6lLHct43alXM1jpxCcCW-Kb3Ms",
+      authDomain: "pedidosinternacional73.firebaseapp.com",
+      projectId: "pedidosinternacional73",
+      storageBucket: "pedidosinternacional73.firebasestorage.app",
+      messagingSenderId: "561757420535",
+      appId: "1:561757420535:web:b3619ed68cfc1983430cf2",
+      measurementId: "G-T28L7S3L12"
+
+    };
+
+
+
+    const app = firebase.initializeApp(firebaseConfig);
+
+    const db = firebase.firestore();
+
+
+
+    const contenedor = document.getElementById('pedidos');
+
+
+
+    db.collection('pedidos').orderBy('timestamp', 'desc')
+
+      .onSnapshot(snapshot => {
+
+        contenedor.innerHTML = '';
+
+        snapshot.forEach(doc => {
+
+          const pedido = doc.data();
+
+          const div = document.createElement('div');
+
+          div.style = "border:1px solid #aaa;padding:10px;margin:10px;";
+
+          div.innerHTML = `
+
+            <strong>Pedido:</strong><br>
+
+            ${pedido.items.map(i => `- ${i.nombre} ($${i.precio})`).join('<br>')}
+
+            <br><strong>Estado:</strong> ${pedido.estado}
+
+            <br><button onclick="marcarEntregado('${doc.id}')">Marcar como entregado</button>
+
+          `;
+
+          contenedor.appendChild(div);
+
+        });
+
+      });
+
+
+
+    function marcarEntregado(id) {
+
+      db.collection('pedidos').doc(id).update({ estado: 'entregado' });
+
+    }
+
+  </script>
+
+</body>
+
+</html>

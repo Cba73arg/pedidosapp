@@ -1,0 +1,124 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Pedidos</title>
+
+</head>
+
+<body>
+
+  <h2>Menú</h2>
+
+  <button onclick="agregar('Coca-Cola', 800)">Coca-Cola - $800</button>
+
+  <button onclick="agregar('Sándwich', 1500)">Sándwich - $1500</button>
+
+  <h3>Carrito:</h3>
+
+  <ul id="carrito"></ul>
+
+  <button onclick="enviarPedido()">Enviar pedido</button>
+
+
+
+  <!-- Firebase SDK -->
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+
+
+  <script>
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBPIFtOd6lLHct43alXM1jpxCcCW-Kb3Ms",
+      authDomain: "pedidosinternacional73.firebaseapp.com",
+      projectId: "pedidosinternacional73",
+      storageBucket: "pedidosinternacional73.firebasestorage.app",
+      messagingSenderId: "561757420535",
+      appId: "1:561757420535:web:b3619ed68cfc1983430cf2",
+      measurementId: "G-T28L7S3L12"
+
+    };
+
+
+
+    const app = firebase.initializeApp(firebaseConfig);
+
+    const db = firebase.firestore();
+
+
+
+    let carrito = [];
+
+
+
+    function agregar(nombre, precio) {
+
+      carrito.push({ nombre, precio });
+
+      mostrarCarrito();
+
+    }
+
+
+
+    function mostrarCarrito() {
+
+      const ul = document.getElementById('carrito');
+
+      ul.innerHTML = '';
+
+      carrito.forEach(item => {
+
+        const li = document.createElement('li');
+
+        li.textContent = `${item.nombre} - $${item.precio}`;
+
+        ul.appendChild(li);
+
+      });
+
+    }
+
+
+
+    function enviarPedido() {
+
+      if (carrito.length === 0) return alert('Carrito vacío');
+
+      db.collection('pedidos').add({
+
+        items: carrito,
+
+        estado: 'pendiente',
+
+        timestamp: new Date()
+
+      }).then(() => {
+
+        alert('¡Pedido enviado!');
+
+        carrito = [];
+
+        mostrarCarrito();
+
+      });
+
+    }
+
+  </script>
+
+</body>
+
+</html>
