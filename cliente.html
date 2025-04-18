@@ -1,45 +1,31 @@
 <!-- index.html -->
 
 <!DOCTYPE html>
-
 <html lang="es">
 
 <head>
-
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
   <title>Pedidos</title>
-
 </head>
 
 <body>
-
   <h2>Menú</h2>
-
   <button onclick="agregar('Coca-Cola', 800)">Coca-Cola - $800</button>
-
   <button onclick="agregar('Sándwich', 1500)">Sándwich - $1500</button>
 
   <h3>Carrito:</h3>
-
   <ul id="carrito"></ul>
 
   <button onclick="enviarPedido()">Enviar pedido</button>
 
+  <!-- Firebase SDK y tu script -->
+  <script type="module">
+    // Importar desde Firebase CDN (versión modular)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-
-  <!-- Firebase SDK -->
-
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-
-
-  <script>
-
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBPIFtOd6lLHct43alXM1jpxCcCW-Kb3Ms",
       authDomain: "pedidosinternacional73.firebaseapp.com",
@@ -48,77 +34,51 @@
       messagingSenderId: "561757420535",
       appId: "1:561757420535:web:b3619ed68cfc1983430cf2",
       measurementId: "G-T28L7S3L12"
-
     };
 
+    // Inicializar Firebase y Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-
-    const app = firebase.initializeApp(firebaseConfig);
-
-    const db = firebase.firestore();
-
-
-
+    // Variables globales
     let carrito = [];
 
-
-
-    function agregar(nombre, precio) {
-
+    // Función para agregar productos al carrito
+    window.agregar = (nombre, precio) => {
       carrito.push({ nombre, precio });
-
       mostrarCarrito();
+    };
 
-    }
-
-
-
+    // Mostrar los productos en el carrito
     function mostrarCarrito() {
-
       const ul = document.getElementById('carrito');
-
       ul.innerHTML = '';
-
       carrito.forEach(item => {
-
         const li = document.createElement('li');
-
         li.textContent = `${item.nombre} - $${item.precio}`;
-
         ul.appendChild(li);
-
       });
-
     }
 
-
-
-    function enviarPedido() {
-
+    // Enviar el pedido a Firestore
+    window.enviarPedido = async () => {
       if (carrito.length === 0) return alert('Carrito vacío');
 
-      db.collection('pedidos').add({
-
-        items: carrito,
-
-        estado: 'pendiente',
-
-        timestamp: new Date()
-
-      }).then(() => {
+      try {
+        await addDoc(collection(db, 'pedidos'), {
+          items: carrito,
+          estado: 'pendiente',
+          timestamp: new Date()
+        });
 
         alert('¡Pedido enviado!');
-
         carrito = [];
-
         mostrarCarrito();
-
-      });
-
-    }
-
+      } catch (error) {
+        alert('Error al enviar pedido');
+        console.error(error);
+      }
+    };
   </script>
-
 </body>
-
-</html>
+</html>￼Enter
