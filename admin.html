@@ -1,37 +1,22 @@
 <!-- admin.html -->
 
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
-
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
   <title>Panel del Local</title>
-
 </head>
-
 <body>
-
   <h2>Pedidos Recibidos</h2>
-
   <div id="pedidos"></div>
 
+  <script type="module">
+    // Importar módulos de Firebase v11+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-
-  <!-- Firebase SDK -->
-
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
-
-
-
-  <script>
-
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBPIFtOd6lLHct43alXM1jpxCcCW-Kb3Ms",
       authDomain: "pedidosinternacional73.firebaseapp.com",
@@ -40,63 +25,42 @@
       messagingSenderId: "561757420535",
       appId: "1:561757420535:web:b3619ed68cfc1983430cf2",
       measurementId: "G-T28L7S3L12"
-
     };
 
-
-
-    const app = firebase.initializeApp(firebaseConfig);
-
-    const db = firebase.firestore();
-
-
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     const contenedor = document.getElementById('pedidos');
 
+    // Escuchar cambios en tiempo real
+    const pedidosRef = collection(db, 'pedidos');
+    const pedidosQuery = query(pedidosRef, orderBy('timestamp', 'desc'));
 
-
-    db.collection('pedidos').orderBy('timestamp', 'desc')
-
-      .onSnapshot(snapshot => {
-
-        contenedor.innerHTML = '';
-
-        snapshot.forEach(doc => {
-
-          const pedido = doc.data();
-
-          const div = document.createElement('div');
-
-          div.style = "border:1px solid #aaa;padding:10px;margin:10px;";
-
-          div.innerHTML = `
-
-            <strong>Pedido:</strong><br>
-
-            ${pedido.items.map(i => `- ${i.nombre} ($${i.precio})`).join('<br>')}
-
-            <br><strong>Estado:</strong> ${pedido.estado}
-
-            <br><button onclick="marcarEntregado('${doc.id}')">Marcar como entregado</button>
-
-          `;
-
-          contenedor.appendChild(div);
-
-        });
-
+    onSnapshot(pedidosQuery, (snapshot) => {
+      contenedor.innerHTML = '';
+      snapshot.forEach(docSnap => {
+        const pedido = docSnap.data();
+        const div = document.createElement('div');
+        div.style = "border:1px solid #aaa;padding:10px;margin:10px;";
+        div.innerHTML = `
+          <strong>Pedido:</strong><br>
+          ${pedido.items.map(i => `- ${i.nombre} ($${i.precio})`).join('<br>')}
+          <br><strong>Estado:</strong> ${pedido.estado}
+          <br><button data-id="${docSnap.id}">Marcar como entregado</button>
+        `;
+        contenedor.appendChild(div);
       });
 
-
-
-    function marcarEntregado(id) {
-
-      db.collection('pedidos').doc(id).update({ estado: 'entregado' });
-
-    }
-
+      // Asignar evento a cada botón
+      contenedor.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-id");
+          const pedidoDoc = doc(db, "pedidos", id);
+          await updateDoc(pedidoDoc, { estado: "entregado" });
+        });
+      });
+    });
   </script>
-
 </body>
-
-</html>
+</html>￼Enter
