@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel del Local</title>
+  <title>Panel de Admin</title>
 </head>
 <body>
   <!-- LOGIN -->
@@ -10,79 +10,89 @@
     <h2>Iniciar sesión</h2>
     <input type="email" id="email" placeholder="Email"><br>
     <input type="password" id="password" placeholder="Contraseña"><br>
-    <button onclick="login()">Ingresar</button>
+    <button id="loginBtn">Ingresar</button>
     <p id="loginError" style="color:red;"></p>
   </div>
 
-  <!-- PANEL DE ADMIN -->
+  <!-- PANEL -->
   <div id="adminPanel" style="display:none;">
     <h2>Pedidos Recibidos</h2>
     <div id="pedidos"></div>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <!-- Firebase Modular SDK (v9+) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-  <!-- Script principal SIN module -->
-  <script>
     // Configuración Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBPIFtOd6lLHct43alXM1jpxCcCW-Kb3Ms",
       authDomain: "pedidosinternacional73.firebaseapp.com",
       projectId: "pedidosinternacional73",
-      storageBucket: "pedidosinternacional73.firebasestorage.app",
+      storageBucket: "pedidosinternacional73.appspot.com",
       messagingSenderId: "561757420535",
-      appId: "1:561757420535:web:b3619ed68cfc1983430cf2",
+      appId: "1:561757420535:web:b3619ed68cfc1983430cf2"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // LOGIN
-    window.login = function () {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const errorMsg = document.getElementById("loginError");
+    const loginBtn = document.getElementById("loginBtn");
+    const emailInput = document.getElementById("email");
+    const passInput = document.getElementById("password");
+    const loginError = document.getElementById("loginError");
 
-      auth.signInWithEmailAndPassword(email, password)
+    loginBtn.addEventListener("click", () => {
+      const email = emailInput.value;
+      const password = passInput.value;
+
+      signInWithEmailAndPassword(auth, email, password)
         .then(() => {
-          document.getElementById('loginContainer').style.display = 'none';
-          document.getElementById('adminPanel').style.display = 'block';
-          cargarPedidos();
+          loginError.textContent = "";
         })
         .catch(error => {
-          errorMsg.textContent = "Error: " + error.message;
+          loginError.textContent = "Error: " + error.message;
         });
-    };
+    });
 
-    // CARGAR PEDIDOS
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        document.getElementById("loginContainer").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
+        cargarPedidos();
+      }
+    });
+
     function cargarPedidos() {
       const contenedor = document.getElementById('pedidos');
-      db.collection('pedidos').orderBy('timestamp', 'desc')
-        .onSnapshot(snapshot => {
-          contenedor.innerHTML = '';
-          snapshot.forEach(doc => {
-            const pedido = doc.data();
-            const div = document.createElement('div');
-            div.style = "border:1px solid #aaa;padding:10px;margin:10px;";
-            div.innerHTML = `
-              <strong>Pedido:</strong><br>
-              ${pedido.items.map(i => `- ${i.nombre} ($${i.precio})`).join('<br>')}
-              <br><strong>Estado:</strong> ${pedido.estado}
-              <br><button onclick="marcarEntregado('${doc.id}')">Marcar como entregado</button>
-            `;
-            contenedor.appendChild(div);
-          });
+      const q = query(collection(db, 'pedidos'), orderBy('timestamp', 'desc'));
+
+      onSnapshot(q, snapshot => {
+        contenedor.innerHTML = '';
+        snapshot.forEach(docSnap => {
+          const pedido = docSnap.data();
+          const div = document.createElement('div');
+          div.style = "border:1px solid #aaa;padding:10px;margin:10px;";
+          div.innerHTML = `
+            <strong>Pedido:</strong><br>
+            ${pedido.items.map(i => `- ${i.nombre} ($${i.precio})`).join('<br>')}
+            <br><strong>Estado:</strong> ${pedido.estado}
+            <br><button onclick="marcarEntregado('${docSnap.id}')">Marcar como entregado</button>
+          `;
+          contenedor.appendChild(div);
         });
+      });
     }
 
-    // MARCAR COMO ENTREGADO
-    window.marcarEntregado = function(id) {
-      db.collection('pedidos').doc(id).update({ estado: 'entregado' });
-    };
+    // Exponer la función para uso global
+    window.marcarEntregado = async function(id) {
+      const pedidoRef = doc(db, "pedidos", id);
+      await updateDoc(pedidoRef, { estado: "entregado" });
+    }
   </script>
 </body>
 </html>￼Enter
