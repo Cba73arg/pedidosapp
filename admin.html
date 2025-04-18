@@ -2,29 +2,32 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel del Local - Admin</title>
+  <title>Panel del Local</title>
 </head>
 <body>
-  <h2>Iniciar sesión</h2>
-  <div id="login-form">
-    <input type="email" id="email" placeholder="Correo"><br>
+  <!-- LOGIN -->
+  <div id="loginContainer">
+    <h2>Iniciar sesión</h2>
+    <input type="email" id="email" placeholder="Email"><br>
     <input type="password" id="password" placeholder="Contraseña"><br>
     <button onclick="login()">Ingresar</button>
-    <p id="error" style="color:red;"></p>
+    <p id="loginError" style="color:red;"></p>
   </div>
 
-  <div id="admin-panel" style="display:none;">
+  <!-- PANEL DE ADMIN -->
+  <div id="adminPanel" style="display:none;">
     <h2>Pedidos Recibidos</h2>
     <div id="pedidos"></div>
-    <button onclick="logout()">Cerrar sesión</button>
   </div>
 
   <!-- Firebase SDKs -->
-  <script>
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, orderBy, query, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
 
+  <!-- Script principal SIN module -->
+  <script>
+    // Configuración Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBPIFtOd6lLHct43alXM1jpxCcCW-Kb3Ms",
       authDomain: "pedidosinternacional73.firebaseapp.com",
@@ -32,67 +35,54 @@
       storageBucket: "pedidosinternacional73.firebasestorage.app",
       messagingSenderId: "561757420535",
       appId: "1:561757420535:web:b3619ed68cfc1983430cf2",
-      measurementId: "G-T28L7S3L12"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    const loginForm = document.getElementById("login-form");
-    const adminPanel = document.getElementById("admin-panel");
-    const pedidosDiv = document.getElementById("pedidos");
-    const errorText = document.getElementById("error");
-
-    async function login() {
+    // LOGIN
+    window.login = function () {
       const email = document.getElementById("email").value;
-      const pass = document.getElementById("password").value;
+      const password = document.getElementById("password").value;
+      const errorMsg = document.getElementById("loginError");
 
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch (error) {
-        errorText.textContent = "Error: " + error.message;
-      }
-    }
-
-    function logout() {
-      signOut(auth);
-    }
-
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        loginForm.style.display = "none";
-        adminPanel.style.display = "block";
-        cargarPedidos();
-      } else {
-        loginForm.style.display = "block";
-        adminPanel.style.display = "none";
-        pedidosDiv.innerHTML = "";
-      }
-    });
-
-    function cargarPedidos() {
-      const q = query(collection(db, "pedidos"), orderBy("timestamp", "desc"));
-      onSnapshot(q, snapshot => {
-        pedidosDiv.innerHTML = "";
-        snapshot.forEach(docSnap => {
-          const pedido = docSnap.data();
-          const div = document.createElement("div");
-          div.style = "border:1px solid #aaa;padding:10px;margin:10px;";
-          div.innerHTML = `
-            <strong>Pedido:</strong><br>
-            ${pedido.items.map(i => `- ${i.nombre} ($${i.precio})`).join('<br>')}
-            <br><strong>Estado:</strong> ${pedido.estado}
-            <br><button onclick="marcarEntregado('${docSnap.id}')">Marcar como entregado</button>
-          `;
-          pedidosDiv.appendChild(div);
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          document.getElementById('loginContainer').style.display = 'none';
+          document.getElementById('adminPanel').style.display = 'block';
+          cargarPedidos();
+        })
+        .catch(error => {
+          errorMsg.textContent = "Error: " + error.message;
         });
-      });
+    };
+
+    // CARGAR PEDIDOS
+    function cargarPedidos() {
+      const contenedor = document.getElementById('pedidos');
+      db.collection('pedidos').orderBy('timestamp', 'desc')
+        .onSnapshot(snapshot => {
+          contenedor.innerHTML = '';
+          snapshot.forEach(doc => {
+            const pedido = doc.data();
+            const div = document.createElement('div');
+            div.style = "border:1px solid #aaa;padding:10px;margin:10px;";
+            div.innerHTML = `
+              <strong>Pedido:</strong><br>
+              ${pedido.items.map(i => `- ${i.nombre} ($${i.precio})`).join('<br>')}
+              <br><strong>Estado:</strong> ${pedido.estado}
+              <br><button onclick="marcarEntregado('${doc.id}')">Marcar como entregado</button>
+            `;
+            contenedor.appendChild(div);
+          });
+        });
     }
 
-    async function marcarEntregado(id) {
-      await updateDoc(doc(db, "pedidos", id), { estado: "entregado" });
-    }
+    // MARCAR COMO ENTREGADO
+    window.marcarEntregado = function(id) {
+      db.collection('pedidos').doc(id).update({ estado: 'entregado' });
+    };
   </script>
 </body>
 </html>
