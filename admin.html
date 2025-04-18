@@ -8,6 +8,15 @@
   <title>Panel del Local</title>
 </head>
 <body>
+  <script>
+    const password = prompt("Ingrese clave");
+    const clavecorrecta = "1234";
+    if (password !== clavecorrecta){
+      alert("Clave incorrecta.NO PUEDES ACCEDER");
+      document.body.innerHTML = "";
+      throw new error("Acceso denegado")
+    }
+  </script>
   <h2>Pedidos Recibidos</h2>
   <div id="pedidos"></div>
 
